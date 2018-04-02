@@ -1,0 +1,7 @@
+#!/bin/sh
+
+rm starfield3D.dsk
+cp sfempty33.dsk starfield3D.dsk
+
+java -jar $AC -p starfield3D.dsk STARFIELD B 0x6000 < starfield3D
+
