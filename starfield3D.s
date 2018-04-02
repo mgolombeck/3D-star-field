@@ -6,98 +6,97 @@
 *   VERSION 1.00 / 02.04.2018  *
 ********************************
 *
- 				DSK 	starfield3D
- 				MX 	  %11
+ 	DSK 	starfield3D
+ 	MX   	%11
         ORG 	$6000
 *
-Temp			  EQU 	$FD
-ADRHIR		  EQU	  $FE			  ; + $FF
-PRNG			  EQU	  $06			  ; pseudo random number generator EOR-val
-MATOR			  EQU	  $07
-ANDMSK		  EQU	  $08
-PSLO      	EQU 	$D8      	; USING FAC-ADRESS RANGE
-PSHI      	EQU 	$DA       ; FOR POINTER IN MULT-TAB
-PDLO      	EQU 	$DC       ; USING ARG-ADRESS RANGE
-PDHI      	EQU 	$DE       ; FOR POINTER IN MULT-TAB
+Temp		EQU 	$FD
+ADRHIR		EQU	$FE		; + $FF
+PRNG		EQU	$06		; pseudo random number generator EOR-val
+MATOR		EQU	$07
+ANDMSK		EQU	$08
+PSLO      	EQU 	$D8     	; USING FAC-ADRESS RANGE
+PSHI      	EQU 	$DA     	; FOR POINTER IN MULT-TAB
+PDLO      	EQU 	$DC     	; USING ARG-ADRESS RANGE
+PDHI      	EQU 	$DE     	; FOR POINTER IN MULT-TAB
 *
-HCLR      	EQU 	$F3F2     ; CLEAR HIRES SCREEN TO BLACK1
-WAIT			  EQU	  $FCA8			; wait a bit
+HCLR      	EQU 	$F3F2   	; CLEAR HIRES SCREEN TO BLACK1
+WAIT		EQU	$FCA8		; wait a bit
 *
 INIT	
-				STA 	$C010   	  ; delete keystrobe
-				LDA 	$C050			  ; text
-				LDA 	$C054			  ; page 1
-				LDA 	$C052 		  ; mixed off
-				LDA 	$C057			  ; hires
-        LDA 	#32
-        STA  	$E6         ; DRAW ON 1
-				JSR	  HCLR			  ; clear screen
-				STZ	  PRNG
-				LDA 	#SSQLO/256  ; SETUP MULT-TAB
-        STA 	PSLO+1
-        LDA 	#SSQHI/256
-        STA 	PSHI+1
-        LDA 	#DSQLO/256
-        STA 	PDLO+1
-        LDA 	#DSQHI/256
-        STA 	PDHI+1
-
+		STA 	$C010   	; delete keystrobe
+		LDA 	$C050		; text
+		LDA 	$C054		; page 1
+		LDA 	$C052 		; mixed off
+		LDA 	$C057		; hires
+        	LDA 	#32
+        	STA  	$E6         	; DRAW ON 1
+		JSR	HCLR		; clear screen
+		STZ	PRNG
+		LDA 	#SSQLO/256  	; SETUP MULT-TAB
+        	STA 	PSLO+1
+        	LDA 	#SSQHI/256
+        	STA 	PSHI+1
+       	 	LDA 	#DSQLO/256
+        	STA 	PDLO+1
+        	LDA 	#DSQHI/256
+        	STA 	PDHI+1
 *
 MAIN
-_BP1		LDX 	#60					; number of stars
-_BP			DEC 	STAR_Z,X			; decrease star z-distance
-				BMI 	_reset				; reset Z-distance 
-				TXA
-				AND	#%00000011			; every uneven star has double the z-speed
-				BNE	_noDEC1
-				DEC	STAR_Z,X
-				BMI	_reset
-				TXA
-_noDEC1		AND	#%00000111
-				BNE	_noDEC2
-				DEC	STAR_Z,X
-				BMI	_reset
-				DEC	STAR_Z,X
-				BMI	_reset
-_noDEC2		LDA	#10
-				JSR	WAIT					; make it a bit slower
-				BRA	_action				; move a star
-_cont			DEX							; 
-				BPL 	_BP					; 
-				BRA 	_BP1
+_BP1		LDX 	#60		; number of stars
+_BP		DEC 	STAR_Z,X	; decrease star z-distance
+		BMI 	_reset		; reset Z-distance 
+		TXA
+		AND	#%00000011	; every fourth star has double the z-speed
+		BNE	_noDEC1
+		DEC	STAR_Z,X
+		BMI	_reset
+		TXA
+_noDEC1		AND	#%00000111	; every eigth star has triple the z-speed
+		BNE	_noDEC2
+		DEC	STAR_Z,X
+		BMI	_reset
+		DEC	STAR_Z,X
+		BMI	_reset
+_noDEC2		LDA	#10		; slow down value for WAIT-routine
+		JSR	WAIT		; slow down the animation, approx 660 cycles for A=10
+		BRA	_action		; move a star
+_cont		DEX			; 
+		BPL 	_BP		; 
+		BRA 	_BP1
 _reset		LDA	#30
-				STA	STAR_Z,X
-				LDA	Temp 					; calculate new star base speed
-				ADC	STAR_X,X
-				ASL
-				BEQ	noEOR1
-				BCC	noEOR1
-				INC	PRNG
-				EOR	PRNG					; pseudo random number generation
+		STA	STAR_Z,X
+		LDA	Temp 		; calculate new star base speed
+		ADC	STAR_X,X
+		ASL
+		BEQ	noEOR1
+		BCC	noEOR1
+		INC	PRNG
+		EOR	PRNG		; pseudo random number generation
 noEOR1		;STA	Temp	
-				BNE	noFIX1				; avoid zero value
-				ADC	PRNG
-noFIX1		STA	STAR_X,X			; save generated pseudo random star base speed
-				ADC	STAR_Y,X
-				ASL
-				BEQ	noEOR2
-				BCC	noEOR2
-				EOR	PRNG					; pseudo random number generation
+		BNE	noFIX1		; avoid zero value
+		ADC	PRNG
+noFIX1		STA	STAR_X,X	; save generated pseudo random star base speed
+		ADC	STAR_Y,X
+		ASL
+		BEQ	noEOR2
+		BCC	noEOR2
+		EOR	PRNG		; pseudo random number generation
 noEOR2		STA	Temp
-				BNE	noFIX2
-				ADC	PRNG
-noFIX2		STA	STAR_Y,X			; save generated pseudo random star base speed
-				JMP	_cont		
+		BNE	noFIX2
+		ADC	PRNG
+noFIX2		STA	STAR_Y,X	; save generated pseudo random star base speed
+		JMP	_cont		
 *				
-_action 	PHX							; save X index
-				LDY	STAR_PLOT_Y,X	; move Star y pos to Y-reg
-				LDA 	YLOOKLO,Y			; 
-				STA 	ADRHIR				; calc HIRES line bas address
-				LDA 	YLOOKHI,Y			; 
-				ORA	#$20					; draw on page 1
-				STA 	ADRHIR+1			; 
-				LDA	STAR_PLOT_X,X
-				TAX
+_action 	PHX			; save X index
+		LDY	STAR_PLOT_Y,X	; move Star y pos to Y-reg
+		LDA 	YLOOKLO,Y	; 
+		STA 	ADRHIR		; calc HIRES line bas address
+		LDA 	YLOOKHI,Y	; 
+		ORA	#$20		; draw on page 1
+		STA 	ADRHIR+1	; 
+		LDA	STAR_PLOT_X,X
+		TAX
 LOTABLE2  	LDY 	DIV7LO,X
           	LDA 	MOD7LO,X
 GOTTAB2   	TAX
@@ -106,76 +105,76 @@ GOTTAB2   	TAX
           	LDA	(ADRHIR),Y
           	AND	ANDMSK
           	STA	(ADRHIR),Y
-				PLX
+		PLX
 *
-				PHX							; calc XPLOT = STAR_X/STAR_Z
-				LDA	STAR_X,X			; can be a signed value here
-				TAY
-				LDA	STAR_Z,X
-				TAX
-				LDA	PROJTAB,X
-				STA	MATOR
-				PLX
-				STA	PSHI
-				EOR	#$FF
-				STA	PDHI
-				SEC
-				LDA	(PSHI),Y
-				SBC	(PDHI),Y
-				LDY	STAR_X,X
-				BPL	starx_done
-				SEC
-				SBC	MATOR
+		PHX			; calc XPLOT = STAR_X/STAR_Z
+		LDA	STAR_X,X	; can be a signed value here
+		TAY
+		LDA	STAR_Z,X
+		TAX
+		LDA	PROJTAB,X
+		STA	MATOR
+		PLX
+		STA	PSHI
+		EOR	#$FF
+		STA	PDHI
+		SEC
+		LDA	(PSHI),Y
+		SBC	(PDHI),Y
+		LDY	STAR_X,X
+		BPL	starx_done
+		SEC
+		SBC	MATOR
 starx_done	CLC
-				ADC	#140					; add xoffset 140 pixel
-;				BCC	addHIGH				; X-value > 255
-				STA	STAR_PLOT_X,X
-				STZ	STAR_PLOT_XH,X
-				BRA	doY
+		ADC	#140		; add xoffset 140 pixel
+;		BCC	addHIGH		; X-value > 255 -> plotting at right screen edge
+		STA	STAR_PLOT_X,X
+		STZ	STAR_PLOT_XH,X
+		BRA	doY
 addHIGH		STA	STAR_PLOT_X,X
-				LDA	#1
-				STA	STAR_PLOT_XH,X
-doY			PHX							; calc XPLOT = STAR_X/STAR_Z
-				LDA	STAR_Y,X			; can be a signed value here
-				TAY
-				LDA	STAR_Z,X
-				TAX
-				LDA	PROJTAB,X
-				STA	MATOR
-				PLX
-				STA	PSHI
-				EOR	#$FF
-				STA	PDHI
-				SEC
-				LDA	(PSHI),Y
-				SBC	(PDHI),Y
-				LDY	STAR_Y,X
-				BPL	stary_done
-				SEC
-				SBC	MATOR
+		LDA	#1
+		STA	STAR_PLOT_XH,X
+doY		PHX			; calc XPLOT = STAR_X/STAR_Z
+		LDA	STAR_Y,X	; can be a signed value here
+		TAY
+		LDA	STAR_Z,X
+		TAX
+		LDA	PROJTAB,X
+		STA	MATOR
+		PLX
+		STA	PSHI
+		EOR	#$FF
+		STA	PDHI
+		SEC
+		LDA	(PSHI),Y
+		SBC	(PDHI),Y
+		LDY	STAR_Y,X
+		BPL	stary_done
+		SEC
+		SBC	MATOR
 stary_done	CLC
-				ADC	#96					; add yoffset 96 pixel
-				STA	STAR_PLOT_Y,X
-				CMP	#192					; check for illegal line numbers!
-				BCS	_doCONT
-				PHX
-				TAY							; move Star y pos to Y-reg
-				LDA 	YLOOKLO,Y			; 
-				STA 	ADRHIR				; 
-				LDA 	YLOOKHI,Y			; 
-				ORA	#$20					; draw on page 1
-				STA 	ADRHIR+1			; 
-				LDA	STAR_PLOT_XH,X	; x-coordinate > 255?
-				BEQ	doLOTABLE
-				LDA	STAR_PLOT_X,X
-				CMP 	#25
-				BCS	_doCONT1			; if x > 279 then do not plot!
-				TAX
-				LDY	DIV7HI,X
-				LDA	MOD7HI,X
-				BRA	GOTTAB
+		ADC	#96		; add yoffset 96 pixel
+		STA	STAR_PLOT_Y,X
+		CMP	#192		; check for illegal line numbers!
+		BCS	_doCONT
+		PHX
+		TAY			; move Star y-pos to Y-reg
+		LDA 	YLOOKLO,Y	; 
+		STA 	ADRHIR		; 
+		LDA 	YLOOKHI,Y	; 
+		ORA	#$20		; draw on page 1
+		STA 	ADRHIR+1	; 
+		LDA	STAR_PLOT_XH,X	; x-coordinate > 255?
+		BEQ	doLOTABLE
+		LDA	STAR_PLOT_X,X
+		CMP 	#25
+		BCS	_doCONT1	; if x > 279 then do not plot!
+		TAX
+		LDY	DIV7HI,X
+		LDA	MOD7HI,X
+		BRA	GOTTAB
 doLOTABLE	LDA	STAR_PLOT_X,X
-				TAX				
+		TAX				
 LOTABLE   	LDY 	DIV7LO,X
           	LDA 	MOD7LO,X
 GOTTAB    	TAX
@@ -184,210 +183,197 @@ GOTTAB    	TAX
           	LDA	(ADRHIR),Y
           	ORA	ANDMSK
           	STA	(ADRHIR),Y
-_doCONT1	PLX							; pull X-register back from stack
+_doCONT1	PLX			; pull X-register back from stack
 *	
 _doCONT		JMP	_cont			
 *
-STAR_Y 		DFB 120,-20,40,-60,80,-100,120,-70,4,-45,60,-5,90,-75,110,-95,80,-17
-					DFB	12,-7,8,-24,31,115,120,125,130,135,140,145,150,155
-					DFB	160,165,170,175,180,185,190
-					DFB	10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10
-					DFB	10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10
-					DFB	10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10
-STAR_X 		DFB 120,100,80,60,-40,-60,-80,-100,70,10,43,122,-23,-70,-92,-5,15,12
-					DFB	39,05,-34,-21,-14,-35,08,13,19,25,11,03,20,30,37,18,04,16
-					DFB	17,09,38
-					DFB	10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10
-					DFB	10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10
-					DFB	10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10
-STAR_Z		DFB 25,30,35,60,35,50,32,17,05,47,23,59,17,31,5,52,16,38,20,41,13,39
-					DFB	2,36
-					DFB	10,15,20,25,30,35,40,45,40,35,30,25,20,15,10,05,10,15,20,25,30,35
-					DFB	40,34,29,24,19,14,09,04,08,13,18,23,28,33,38,43,39,34,29,24,19,14,9
-					DFB	4,7,12,17,22,27,32,37,42,47,46,41,36,31,26,21,16,11,6,1
+* intermediate star X,Y,Z-data storage with initial values
+*
+STAR_Y 		DFB 	120,-20,40,-60,80,-100,120,-70,4,-45,60,-5,90,-75,110,-95,80,-17
+		DFB	12,-7,8,-24,31,115,120,125,130,135,140,145,150,155
+		DFB	160,165,170,175,180,185,190
+		DFB	10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10
+		DFB	10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10
+		DFB	10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10
+STAR_X 		DFB 	120,100,80,60,-40,-60,-80,-100,70,10,43,122,-23,-70,-92,-5,15,12
+		DFB	39,05,-34,-21,-14,-35,08,13,19,25,11,03,20,30,37,18,04,16
+		DFB	17,09,38
+		DFB	10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10
+		DFB	10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10
+		DFB	10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10
+STAR_Z		DFB 	25,30,35,60,35,50,32,17,05,47,23,59,17,31,5,52,16,38,20,41,13,39
+		DFB	2,36
+		DFB	10,15,20,25,30,35,40,45,40,35,30,25,20,15,10,05,10,15,20,25,30,35
+		DFB	40,34,29,24,19,14,09,04,08,13,18,23,28,33,38,43,39,34,29,24,19,14,9
+		DFB	4,7,12,17,22,27,32,37,42,47,46,41,36,31,26,21,16,11,6,1
 STAR_PLOT_X	DFB	00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00
-   				DFB	00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00
-   				DFB	00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00
-   				DFB	00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00
-					DFB	00,00,00
+   		DFB	00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00
+   		DFB	00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00
+   		DFB	00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00
+		DFB	00,00,00
 STAR_PLOT_XH	DFB	00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00
-   				DFB	00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00
-   				DFB	00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00
-   				DFB	00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00
-					DFB	00,00,00
+   		DFB	00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00
+   		DFB	00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00
+   		DFB	00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00
+		DFB	00,00,00
 STAR_PLOT_Y	DFB	00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00
-   				DFB	00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00
-   				DFB	00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00
-   				DFB	00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00
-					DFB	00,00,00
-ANDMASK   DFB $81,$82,$84,$88,$90,$a0,$c0
+   		DFB	00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00
+   		DFB	00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00
+   		DFB	00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00
+		DFB	00,00,00
+*
+* pixel masks for setting and clearing a pixel in a HIRES-byte
+*
+ANDMASK   	DFB 	$81,$82,$84,$88,$90,$a0,$c0
 CLRMASK		DFB	$7E,$7D,$7B,$77,$6F,$5F,$3F		
 *
-          		DS \
-YLOOKLO   				HEX 	0000000000000000
-          				HEX 	8080808080808080
-                  HEX   0000000000000000
-                  HEX   8080808080808080
-                  HEX   0000000000000000
-                  HEX   8080808080808080
-                  HEX   0000000000000000
-                  HEX   8080808080808080
-                  HEX   2828282828282828
-                  HEX   a8a8a8a8a8a8a8a8
-                  HEX   2828282828282828
-                  HEX   a8a8a8a8a8a8a8a8
-                  HEX   2828282828282828
-                  HEX   a8a8a8a8a8a8a8a8
-                  HEX   2828282828282828
-                  HEX   a8a8a8a8a8a8a8a8
-                  HEX   5050505050505050
-                  HEX   d0d0d0d0d0d0d0d0
-                  HEX   5050505050505050
-                  HEX   d0d0d0d0d0d0d0d0
-                  HEX   5050505050505050
-                  HEX   d0d0d0d0d0d0d0d0
-                  HEX   5050505050505050
-                  HEX   d0d0d0d0d0d0d0d0
-          		DS \
-                  
-YLOOKHI   				HEX 	0004080c1014181c
-                  HEX   0004080c1014181c
-                  HEX   0105090d1115191d
-                  HEX   0105090d1115191d
-                  HEX   02060a0e12161a1e
-                  HEX   02060a0e12161a1e
-                  HEX   03070b0f13171b1f
-                  HEX   03070b0f13171b1f
-                  HEX   0004080c1014181c
-                  HEX   0004080c1014181c
-                  HEX   0105090d1115191d
-                  HEX   0105090d1115191d
-                  HEX   02060a0e12161a1e
-                  HEX   02060a0e12161a1e
-                  HEX   03070b0f13171b1f
-                  HEX   03070b0f13171b1f
-                  HEX   0004080c1014181c
-                  HEX   0004080c1014181c
-                  HEX   0105090d1115191d
-                  HEX   0105090d1115191d
-                  HEX   02060a0e12161a1e
-                  HEX   02060a0e12161a1e
-                  HEX   03070b0f13171b1f
-                  HEX   03070b0f13171b1f
-				DS \
-PROJTAB2   ;HEX F3E8
-				  HEX DED5CCC4BD
-          HEX B6B0AA9F968E8680
-          HEX 79746F6A66625E5B
-          HEX 5855504B4743403D
-          HEX 3A3735332F2C2927
-          HEX 24211E1B19171614
-          HEX 1312110F0E0D0C0B
-          HEX 0A0A090908080707
-          HEX 0707060606060505
-          HEX 0505050505040404
-
-          HEX 0404040404040403
-          HEX 0303030303030303
-          HEX 0303030303030303
-          HEX 0202020202020202
-          HEX 0202020202020202
-          HEX 0202020202020202
-          HEX 0101010101010101
-          HEX 0101010101010101
-          HEX 0101010101010101
-          HEX 0101010101010101
-          HEX 0000000000000000
-                  
-PROJTAB   	HEX FFF0
- 				    HEX E8D5C4B6AA9F96
- 				    HEX 8E8680797A6F6A
- 				    HEX 66625E5B585552
- 				    HEX 504D4B49474543
- 				    HEX 41403E3D3B3A39
- 				    HEX 37363534333231
- 				    HEX 302F2E
-          	HEX 2C2927
-          	HEX 24211E1B19171614
-          	HEX 1312110F0E0D0C0B
-          	HEX 0A0A090908080707
-          	HEX 0707060606060505
-          	HEX 0505050505040404
-
-				DS \
-DIV7HI    HEX   2424242525252525
-          HEX   2525262626262626
-          HEX   2627272727272727
-MOD7HI    HEX   0405060001020304
-          HEX   0506000102030405
-          HEX   0600010203040506
-          DS \
-
-DIV7LO            HEX   0000000000000001
-                  HEX   0101010101010202
-                  HEX   0202020202030303
-                  HEX   0303030304040404
-                  HEX   0404040505050505
-                  HEX   0505060606060606
-                  HEX   0607070707070707
-                  HEX   0808080808080809
-                  HEX   0909090909090a0a
-                  HEX   0a0a0a0a0a0b0b0b
-                  HEX   0b0b0b0b0c0c0c0c
-                  HEX   0c0c0c0d0d0d0d0d
-                  HEX   0d0d0e0e0e0e0e0e
-                  HEX   0e0f0f0f0f0f0f0f
-                  HEX   1010101010101011
-                  HEX   1111111111111212
-                  HEX   1212121212131313
-                  HEX   1313131314141414
-                  HEX   1414141515151515
-                  HEX   1515161616161616
-                  HEX   1617171717171717
-                  HEX   1818181818181819
-                  HEX   1919191919191a1a
-                  HEX   1a1a1a1a1a1b1b1b
-                  HEX   1b1b1b1b1c1c1c1c
-                  HEX   1c1c1c1d1d1d1d1d
-                  HEX   1d1d1e1e1e1e1e1e
-                  HEX   1e1f1f1f1f1f1f1f
-                  HEX   2020202020202021
-                  HEX   2121212121212222
-                  HEX   2222222222232323
-                  HEX   2323232324242424
+          	DS \	; page alignment
+YLOOKLO   	HEX 	0000000000000000
+          	HEX 	8080808080808080
+                HEX   	0000000000000000
+                HEX   	8080808080808080
+                HEX   	0000000000000000
+                HEX  	8080808080808080
+                HEX   	0000000000000000
+                HEX   	8080808080808080
+                HEX   	2828282828282828
+                HEX   	a8a8a8a8a8a8a8a8
+                HEX   	2828282828282828
+                HEX   	a8a8a8a8a8a8a8a8
+                HEX   	2828282828282828
+                HEX   	a8a8a8a8a8a8a8a8
+                HEX   	2828282828282828
+                HEX   	a8a8a8a8a8a8a8a8
+                HEX   	5050505050505050
+                HEX   	d0d0d0d0d0d0d0d0
+                HEX   	5050505050505050
+                HEX   	d0d0d0d0d0d0d0d0
+                HEX   	5050505050505050
+                HEX   	d0d0d0d0d0d0d0d0
+                HEX   	5050505050505050
+                HEX   	d0d0d0d0d0d0d0d0
+          	DS \
+*                  
+YLOOKHI   	HEX 	0004080c1014181c
+                HEX   	0004080c1014181c
+                HEX   	0105090d1115191d
+                HEX   	0105090d1115191d
+                HEX   	02060a0e12161a1e
+                HEX   	02060a0e12161a1e
+                HEX  	03070b0f13171b1f
+                HEX   	03070b0f13171b1f
+                HEX   	0004080c1014181c
+                HEX   	0004080c1014181c
+                HEX   	0105090d1115191d
+                HEX   	0105090d1115191d
+                HEX   	02060a0e12161a1e
+                HEX   	02060a0e12161a1e
+                HEX   	03070b0f13171b1f
+                HEX   	03070b0f13171b1f
+                HEX   	0004080c1014181c
+                HEX   	0004080c1014181c
+                HEX   	0105090d1115191d
+                HEX   	0105090d1115191d
+                HEX   	02060a0e12161a1e
+                HEX   	02060a0e12161a1e
+                HEX   	03070b0f13171b1f
+                HEX   	03070b0f13171b1f
+		DS \
+*
+* Table for 1/Z-calculus
+*
+PROJTAB   	HEX 	FFF0
+ 		HEX 	E8D5C4B6AA9F96
+ 		HEX 	8E8680797A6F6A
+ 		HEX 	66625E5B585552
+ 		HEX 	504D4B49474543
+ 		HEX 	41403E3D3B3A39
+ 		HEX 	37363534333231
+ 		HEX 	302F2E2C2927
+          	HEX 	24211E1B19171614
+          	HEX 	1312110F0E0D0C0B
+          	HEX 	0A0A090908080707
+          	HEX 	0707060606060505
+          	HEX 	0505050505040404
+		DS \
+*
+* division by 7 tables for pixel positioning
+*
+DIV7HI    	HEX   	2424242525252525
+          	HEX   	2525262626262626
+          	HEX   	2627272727272727
+MOD7HI    	HEX   	0405060001020304
+          	HEX   	0506000102030405
+         	HEX   	0600010203040506
+          	DS \
+*
+DIV7LO          HEX   	0000000000000001
+                HEX  	0101010101010202
+                HEX   	0202020202030303
+                HEX   	0303030304040404
+                HEX   	0404040505050505
+                HEX  	0505060606060606
+                HEX   	0607070707070707
+                HEX   	0808080808080809
+                HEX   	0909090909090a0a
+                HEX   	0a0a0a0a0a0b0b0b
+                HEX   	0b0b0b0b0c0c0c0c
+                HEX   	0c0c0c0d0d0d0d0d
+                HEX   	0d0d0e0e0e0e0e0e
+                HEX   	0e0f0f0f0f0f0f0f
+                HEX   	1010101010101011
+                HEX   	1111111111111212
+                HEX   	1212121212131313
+                HEX   	1313131314141414
+                HEX   	1414141515151515
+                HEX   	1515161616161616
+                HEX   	1617171717171717
+                HEX   	1818181818181819
+                HEX   	1919191919191a1a
+                HEX   	1a1a1a1a1a1b1b1b
+                HEX   	1b1b1b1b1c1c1c1c
+                HEX   	1c1c1c1d1d1d1d1d
+                HEX   	1d1d1e1e1e1e1e1e
+                HEX   	1e1f1f1f1f1f1f1f
+                HEX   	2020202020202021
+                HEX   	2121212121212222
+                HEX   	2222222222232323
+                HEX   	2323232324242424
           
-MOD7LO            HEX   0001020304050600
-                  HEX   0102030405060001
-                  HEX   0203040506000102
-                  HEX   0304050600010203
-                  HEX   0405060001020304
-                  HEX   0506000102030405
-                  HEX   0600010203040506
-                  HEX   0001020304050600
-                  HEX   0102030405060001
-                  HEX   0203040506000102
-                  HEX   0304050600010203
-                  HEX   0405060001020304
-                  HEX   0506000102030405
-                  HEX   0600010203040506
-                  HEX   0001020304050600
-                  HEX   0102030405060001
-                  HEX   0203040506000102
-                  HEX   0304050600010203
-                  HEX   0405060001020304
-                  HEX   0506000102030405
-                  HEX   0600010203040506
-                  HEX   0001020304050600
-                  HEX   0102030405060001
-                  HEX   0203040506000102
-                  HEX   0304050600010203
-                  HEX   0405060001020304
-                  HEX   0506000102030405
-                  HEX   0600010203040506
-                  HEX   0001020304050600
-                  HEX   0102030405060001
-                  HEX   0203040506000102
-                  HEX   0304050600010203
+MOD7LO          HEX   	0001020304050600
+                HEX   	0102030405060001
+                HEX   	0203040506000102
+                HEX   	0304050600010203
+                HEX   	0405060001020304
+                HEX   	0506000102030405
+                HEX   	0600010203040506
+                HEX   	0001020304050600
+                HEX   	0102030405060001
+                HEX   	0203040506000102
+                HEX   	0304050600010203
+                HEX   	0405060001020304
+                HEX   	0506000102030405
+                HEX   	0600010203040506
+                HEX   	0001020304050600
+                HEX   	0102030405060001
+                HEX   	0203040506000102
+                HEX   	0304050600010203
+                HEX   	0405060001020304
+                HEX   	0506000102030405
+                HEX   	0600010203040506
+                HEX   	0001020304050600
+                HEX   	0102030405060001
+                HEX   	0203040506000102
+                HEX   	0304050600010203
+                HEX   	0405060001020304
+                HEX   	0506000102030405
+                HEX   	0600010203040506
+                HEX   	0001020304050600
+                HEX  	0102030405060001
+                HEX   	0203040506000102
+                HEX   	0304050600010203
+*
+* multiplication tables
 *
 SSQLO            DFB $00,$00,$01,$02,$04,$06,$09,$0C
                  DFB $10,$14,$19,$1E,$24,$2A,$31,$38
@@ -648,8 +634,6 @@ DSQHI            DFB $3F,$3F,$3E,$3E,$3D,$3D,$3C,$3C
                  DFB $35,$35,$35,$36,$36,$37,$37,$38
                  DFB $38,$39,$39,$3A,$3A,$3B,$3B,$3C
                  DFB $3C,$3D,$3D,$3E,$3E,$3F,$3F,$00
-				
-                  
-
-                  
-          	
+*
+* end of program
+*
